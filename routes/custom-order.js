@@ -1,26 +1,24 @@
 const express = require('express');
+const Order = require('../models/Order');
 
-const Order = require('../models/Order'); // Assuming you have an Order model
-
-module.exports = function(upload) {
+function customOrderRoute(upload) {
   const router = express.Router();
-// Handle POST request for custom orders
-router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      phone,
-      clothingType,
-      fabricType,
-      productType,
-      aestheticStyle,
-      features,
-      vision,
-      shippingAddress,
-      deliveryDate,
-      price
-    } = req.body;
+
+  router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
+    try {
+      const {
+        name,
+        email,
+        phone,
+        clothingType,
+        fabricType,
+        productType,
+        aestheticStyle,
+        features,
+        vision,
+        shippingAddress,
+        deliveryDate
+      } = req.body;
 
       const uploadedCloth = req.file ? req.file.filename : null;
 
@@ -31,8 +29,7 @@ router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
         console.error('❌ Error parsing features:', err);
       }
 
-    // Create a new custom order
-    const newOrder = new Order({
+      const order = new Order({
         name,
         email,
         phone,
@@ -45,10 +42,9 @@ router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
         shippingAddress,
         deliveryDate,
         uploadedCloth
-    });
+      });
 
-    // Save the order to the database
-      const savedOrder = await newOrder.save();
+      const savedOrder = await order.save();
       console.log('✅ Order saved:', savedOrder);
       res.status(200).json({ message: 'Order received and saved!', order: savedOrder });
     } catch (err) {
@@ -58,4 +54,6 @@ router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
   });
 
   return router;
-};
+}
+
+module.exports = customOrderRoute;

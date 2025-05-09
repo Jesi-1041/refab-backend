@@ -32,7 +32,9 @@ const { connectCartDB } = require('./db'); // Cart DB connector
 
   // Now that DBs are connected, require dependent modules
   const Order = require('./models/Order');
-  const customOrderRoute = require('./routes/custom-order'); 
+
+  const customOrderRoute = require('./routes/custom-order')(upload); // <-- This line must come after
+
   const cartRoutes = require('./routes/cart');
   const checkoutRoutes = require('./routes/checkout');
 
