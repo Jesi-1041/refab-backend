@@ -1,5 +1,5 @@
 const express = require('express');
-const Order = require('../models/COrder');
+const CheckoutOrder = require('../models/COrder');
 const Cart = require('../models/Cart');
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.post('/checkout', async (req, res) => {
     } = req.body;
 
     // Create a new order
-    const newOrder = new Order({
+    const newOrder = new CheckoutOrder({
       order_id,
       name,
       email,

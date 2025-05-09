@@ -54,4 +54,7 @@ function arrayLimit(val) {
 
 // Create and export the model
 const Order = mongoose.model('Order', orderSchema);
+if (mongoose.connection.name !== 'adminDB') {
+  mongoose.createConnection(process.env.MONGO_URI_ADMIN);
+}
 module.exports = Order;

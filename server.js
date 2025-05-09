@@ -2,53 +2,63 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose');  // Import mongoose
-const Order = require('./models/Order');  // Import the Order model (we will create this in the next step)
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
-const app = express();
-const PORT = 5000;
+// Load environment variables
+dotenv.config();
 
-// Enable CORS
-app.use(cors());
+const { connectCartDB } = require('./db'); // Cart DB connector
 
-// Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Wrap everything in an async function to use await
+(async () => {
+  const app = express();
+  const PORT = process.env.PORT || 5000;
 
-// Serve static files (for uploaded files)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Setup multer for file uploads
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+  // --- Connect to Admin DB (for Order model) ---
+  try {
+    await mongoose.connect(process.env.MONGO_URI_ADMIN, {
+      dbName: 'adminDB',
+    });
+    console.log(`✅ Connected to AdminDB at ${process.env.MONGO_URI_ADMIN}`);
+  } catch (err) {
+    console.error('❌ MongoDB (Admin) connection error:', err);
+    process.exit(1); // Exit if admin DB fails
   }
-});
-const upload = multer({ storage });
 
-// MongoDB connection setup
-mongoose.connect('mongodb://localhost:27017/refab')
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
+  // --- Connect to Cart DB ---
+  await connectCartDB(); // Ensure this happens before requiring routes
+
+  // Now that DBs are connected, require dependent modules
+  const Order = require('./models/Order');
+  const cartRoutes = require('./routes/cart');
+  const checkoutRoutes = require('./routes/checkout');
+
+  // --- Middlewares ---
+  app.use(cors({
+    origin: 'https://refab-wearthechange.netlify.app',
+    credentials: true
+  }));
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+  // --- Multer Setup for File Uploads ---
+  const storage = multer.diskStorage({
+    destination: 'uploads/',
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + '-' + file.originalname);
+    }
+  });
+  const upload = multer({ storage });
+
+  // --- Routes ---
+  app.get('/', (req, res) => {
+    res.send('ReFab Merged Backend is Running!');
   });
 
-  
-   
-
-// Routes
-app.get('/', (req, res) => {
-  res.send('ReFab Backend is Running!');
-});
-
-// Handle custom order POST
-app.post('/api/custom-order', upload.single('clothUpload'), (req, res) => {
-    console.log('Request body:', req.body);  // Log the body to see the data
-    console.log('Uploaded file:', req.file);  // Log the file to ensure it's received
-  
+  // Custom Order Route
+  app.post('/api/custom-order', upload.single('clothUpload'), (req, res) => {
     const {
       name,
       email,
@@ -62,16 +72,16 @@ app.post('/api/custom-order', upload.single('clothUpload'), (req, res) => {
       shippingAddress,
       deliveryDate
     } = req.body;
-  
+
     const uploadedCloth = req.file ? req.file.filename : null;
-  
+
     let parsedFeatures = [];
     try {
       parsedFeatures = features ? JSON.parse(features) : [];
     } catch (err) {
       console.error('❌ Error parsing features:', err);
     }
-  
+
     const order = new Order({
       name,
       email,
@@ -86,12 +96,10 @@ app.post('/api/custom-order', upload.single('clothUpload'), (req, res) => {
       deliveryDate,
       uploadedCloth
     });
-  
-    console.log('Order data before save:', order);  // Log the order object before saving
-  
+
     order.save()
       .then(savedOrder => {
-        console.log('✅ Order saved to MongoDB:', savedOrder);
+        console.log('✅ Order saved:', savedOrder);
         res.status(200).json({ message: 'Order received and saved!', order: savedOrder });
       })
       .catch(err => {
@@ -99,9 +107,13 @@ app.post('/api/custom-order', upload.single('clothUpload'), (req, res) => {
         res.status(500).json({ message: 'Failed to save order to database', error: err });
       });
   });
-  
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+  // Cart + Checkout Routes
+  app.use('/api', cartRoutes);
+  app.use('/api', checkoutRoutes);
+
+  // --- Start Server ---
+  app.listen(PORT, () => {
+    console.log(`🚀 Merged server running at http://localhost:${PORT}`);
+  });
+})();

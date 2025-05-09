@@ -1,17 +1,21 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+// Load environment variables
+dotenv.config();
+let cartDB; 
 
-// MongoDB URI
-const uri = 'mongodb://localhost:27017/refab1'; // Use your MongoDB URI
-
-const connectDB = async () => {
-  try {
-    await mongoose.connect('mongodb://localhost:27017/refab1');
-
-    console.log('Connected to MongoDB');
+const connectCartDB = async () => {
+ try {
+    cartDB = await mongoose.createConnection(process.env.MONGO_URI, {
+      dbName: 'refabDB',
+    });
+    console.log('✅ Connected to MongoDB (Cart/Refab DB)');
   } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    process.exit(1); // Exit the process if connection fails
+    console.error('❌ MongoDB (Cart/Refab) connection error:', err);
   }
 };
 
-module.exports = connectDB;
+module.exports = {
+  connectCartDB,
+  getCartDB: () => cartDB
+};

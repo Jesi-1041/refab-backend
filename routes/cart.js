@@ -2,55 +2,72 @@ const express = require('express');
 const Cart = require('../models/Cart');
 const router = express.Router();
 
-// Get Cart by session ID
+/**
+ * @route   GET /api/cart/:sessionId
+ * @desc    Get cart by session ID
+ */
 router.get('/cart/:sessionId', async (req, res) => {
   try {
     const cart = await Cart.findOne({ sessionId: req.params.sessionId });
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
-    res.json(cart);
+    res.status(200).json(cart);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('GET /cart/:sessionId error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Add item to the cart
+/**
+ * @route   POST /api/cart
+ * @desc    Create or update cart by session ID
+ */
 router.post('/cart', async (req, res) => {
   try {
     const { sessionId, cartItems } = req.body;
-    console.log("Received body:", req.body);
+
+    if (!sessionId || !Array.isArray(cartItems)) {
+      return res.status(400).json({ message: 'Invalid cart payload' });
+    }
 
     let cart = await Cart.findOne({ sessionId });
 
     if (cart) {
-      // If cart exists, update it
       cart.cartItems = cartItems;
     } else {
-      // If no cart exists, create a new one
-      cart = new Cart({
-        sessionId,
-        cartItems
-      });
+      cart = new Cart({ sessionId, cartItems });
     }
 
     await cart.save();
-    res.json(cart);
+
+    res.status(200).json({
+      message: 'Cart saved successfully',
+      sessionId: cart.sessionId,
+      cartItems: cart.cartItems,
+      // You may add an orderId generation mechanism here if needed
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('POST /cart error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Delete cart
+/**
+ * @route   DELETE /api/cart/:sessionId
+ * @desc    Delete cart by session ID
+ */
 router.delete('/cart/:sessionId', async (req, res) => {
   try {
     const cart = await Cart.findOneAndDelete({ sessionId: req.params.sessionId });
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
-    res.json({ message: 'Cart deleted successfully' });
+    res.status(200).json({ message: 'Cart deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('DELETE /cart/:sessionId error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
