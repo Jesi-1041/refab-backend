@@ -6,6 +6,7 @@ function customOrderRoute(upload) {
 
   router.post('/custom-order', upload.single('clothUpload'), async (req, res) => {
     try {
+      // Destructure the data from the request body
       const {
         name,
         email,
@@ -20,8 +21,10 @@ function customOrderRoute(upload) {
         deliveryDate
       } = req.body;
 
+      // Handle the uploaded file (clothUpload)
       const uploadedCloth = req.file ? req.file.filename : null;
 
+      // Parse features field safely
       let parsedFeatures = [];
       try {
         parsedFeatures = features ? JSON.parse(features) : [];
@@ -29,6 +32,7 @@ function customOrderRoute(upload) {
         console.error('❌ Error parsing features:', err);
       }
 
+      // Create a new order with the provided data
       const order = new Order({
         name,
         email,
@@ -44,10 +48,14 @@ function customOrderRoute(upload) {
         uploadedCloth
       });
 
+      // Save the order to the database
       const savedOrder = await order.save();
       console.log('✅ Order saved:', savedOrder);
+
+      // Send success response
       res.status(200).json({ message: 'Order received and saved!', order: savedOrder });
     } catch (err) {
+      // Handle errors during order processing
       console.error('❌ Error processing custom order:', err);
       res.status(500).json({ message: 'Failed to process custom order', error: err.message });
     }
