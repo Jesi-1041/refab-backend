@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
+
 // Load environment variables
 dotenv.config();
 
@@ -31,16 +32,19 @@ const { connectCartDB } = require('./db'); // Cart DB connector
 
   // Now that DBs are connected, require dependent modules
   const Order = require('./models/Order');
+  const customOrderRoute = require('./routes/custom-order'); 
   const cartRoutes = require('./routes/cart');
   const checkoutRoutes = require('./routes/checkout');
 
   // --- Middlewares ---
   app.use(cors({
-    origin: 'https://refab-wearthechange.netlify.app',
+    origin: 'https://refabwearthechange.netlify.app',
     credentials: true
   }));
+  
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use('/api', customOrderRoute);
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
   // --- Multer Setup for File Uploads ---

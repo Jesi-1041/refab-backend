@@ -31,15 +31,19 @@ router.post('/cart', async (req, res) => {
       return res.status(400).json({ message: 'Invalid cart payload' });
     }
 
+    console.log(`Saving cart for sessionId: ${sessionId}`); // Add logging to help with debugging
+
     let cart = await Cart.findOne({ sessionId });
 
     if (cart) {
-      cart.cartItems = cartItems;
+      cart.cartItems = cartItems; // Update cart items
     } else {
-      cart = new Cart({ sessionId, cartItems });
+      cart = new Cart({ sessionId, cartItems }); // Create a new cart
     }
 
     await cart.save();
+
+    console.log(`Cart saved successfully for sessionId: ${sessionId}`); // Log success
 
     res.status(200).json({
       message: 'Cart saved successfully',
@@ -49,7 +53,7 @@ router.post('/cart', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('POST /cart error:', err);
+    console.error('POST /cart error:', err); // Add better error logging
     res.status(500).json({ message: 'Server error' });
   }
 });
