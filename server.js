@@ -37,11 +37,20 @@ const { connectCartDB } = require('./db'); // Cart DB connector
   const checkoutRoutes = require('./routes/checkout');
 
   // --- Middlewares ---
-  app.use(cors({
-    origin: 'https://refabwearthechange.netlify.app',
-    credentials: true
-  }));
-  
+const allowedOrigins = [
+  'https://refabwearthechange.netlify.app' 
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/api', customOrderRoute);
