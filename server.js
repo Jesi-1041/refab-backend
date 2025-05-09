@@ -124,6 +124,7 @@ app.use(cors({
   // Cart + Checkout Routes
   app.use('/api', cartRoutes);
   app.use('/api', checkoutRoutes);
+  app.use('/api', customOrderRoute);
 
   // --- Start Server ---
   app.listen(PORT, () => {
